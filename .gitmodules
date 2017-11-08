@@ -1,0 +1,3 @@
+[submodule "agdarsec"]
+	path = agdarsec
+	url = git@github.com:gallais/agdarsec.git
