@@ -4,7 +4,7 @@ open import Erlang.Syntax
 open import Function using (_∘_; flip; const; _$_)
 open import Data.List using (List; _∷_; []; [_])
 open import Data.String
-open import Data.Product using (_,_)
+open import Data.Product using (_,_; proj₁)
 open import Category.Monad.State
 
 -- Compilation state: list of bound variables.
@@ -35,7 +35,7 @@ nth (x ∷ xs) (there n) d = nth xs n d
 
 -- Get the last bound variable.
 getHead : Compile String
-getHead = get >>= return ∘ flip def "a"
+getHead = get >>= return ∘ flip def ""
 
 -- Get the Nth bound variable.
 getNth : {a : ★} {xs : Ctx} → a ∈ xs → Compile String
@@ -43,7 +43,7 @@ getNth n = get >>= λ s → return (nth s n "error")
 
 -- Bind a new variable.
 putHead : String → Compile String
-putHead a = get >>= λ xs → put (a ∷ xs) >>= const (return a)
+putHead a = get >>= λ xs → put (a ∷ xs) >> return a
 
 -- Perform a stateful computation in isolation, not letting it modify the current state.
 isolate : ∀ {A : Set} → Compile A → Compile A
@@ -58,9 +58,9 @@ cTerm (lam t)        = getHead >>= λ x → putHead (nextId x) >>= λ x' → cTe
 cTerm (app f x)      = isolate (cTerm f) >>= λ f' → isolate (cTerm x) >>= λ x' → return $ apply f' [ x' ]
 cTerm (let[ x ]in f) = isolate (cTerm x) >>= λ x' → getHead >>= λ a → putHead (nextId a) >>= λ a' → cTerm f >>= λ f' → return $ lett (a' , x') f'
 
--- I don't actually know what's going on here, I just used Auto.
+-- Start the compilation with an empty list of bound variables.
 compile : ∀ {α} → [] ⊢ α → Expr
-compile = (λ {x} y → Data.Product.proj₁ (y [])) ∘ cTerm
+compile t = proj₁ (cTerm t [])
 
 -- Fun examples.
 t t2 t3 : Expr
