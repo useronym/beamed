@@ -1,4 +1,4 @@
 name: beamed
-depend: agdarsec
+depend: standard-library agdarsec
 include: src
 
