@@ -28,7 +28,7 @@ nextId' : List Char → List Char
 nextId' [] = [ 'a' ]
 nextId' (c ∷ cs) with (nextChar c)
 nextId' (c ∷ cs) | c' , false = c' ∷ cs
-nextId' (c ∷ cs) | c' , true = c' ∷ nextId' cs
+nextId' (c ∷ cs) | c' , true  = c' ∷ nextId' cs
 
 nextId : String → String
 nextId = fromList ∘ reverse ∘ nextId' ∘ reverse ∘ toList
@@ -53,9 +53,13 @@ getHead = get >>= return ∘ flip def ""
 getNth : {a : ★} {xs : Ctx} → a ∈ xs → Compile String
 getNth n = get >>= λ s → return (nth s n "error")
 
--- Bind a new variable.
+-- Put in a new variable.
 putHead : String → Compile String
 putHead a = get >>= λ xs → put (a ∷ xs) >> return a
+
+-- Bind a new variable.
+bindVar : Compile String
+bindVar = getHead >>= putHead ∘ nextId
 
 -- Perform a stateful computation in isolation, not letting it modify the current state.
 isolate : ∀ {A : Set} → Compile A → Compile A
@@ -66,9 +70,9 @@ isolate m = get >>= λ s → m >>= λ m' → put s >> return m'
 cTerm : ∀ {Γ α} → Γ ⊢ α → Compile Expr
 cTerm unit           = return (tuple [])
 cTerm (var x)        = getNth x >>= return ∘ var
-cTerm (lam t)        = getHead >>= λ x → putHead (nextId x) >>= λ x' → cTerm t >>= λ t' → return $ fun ([ x' ] ⇒ [ t' ])
+cTerm (lam t)        = bindVar >>= λ x' → cTerm t >>= λ t' → return $ fun ([ x' ] ⇒ [ t' ])
 cTerm (app f x)      = isolate (cTerm f) >>= λ f' → isolate (cTerm x) >>= λ x' → return $ apply f' [ x' ]
-cTerm (let[ x ]in f) = isolate (cTerm x) >>= λ x' → getHead >>= λ a → putHead (nextId a) >>= λ a' → cTerm f >>= λ f' → return $ lett (a' , x') f'
+cTerm (let[ x ]in f) = isolate (cTerm x) >>= λ x' → bindVar >>= λ a' → cTerm f >>= λ f' → return $ lett (a' , x') f'
 
 -- Start the compilation with an empty list of bound variables.
 compile : ∀ {α} → [] ⊢ α → Expr
