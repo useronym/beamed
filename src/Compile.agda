@@ -1,11 +1,14 @@
 module Compile where -- we compile shit.
 open import Syntax
 open import Erlang.Syntax
-open import Function using (_∘_; flip; const; _$_)
-open import Data.List using (List; _∷_; []; [_])
-open import Data.String
-open import Data.Product using (_,_; proj₁)
+open import Function using (_∘_; flip; _$_)
+open import Data.Nat using (_+_)
+open import Data.List using (List; _∷_; []; [_]; reverse)
+open import Data.String using (String; toList; fromList)
+open import Data.Bool using (Bool; true; false; if_then_else_)
+open import Data.Product using (_×_; _,_; proj₁)
 open import Category.Monad.State
+open import Data.Char
 
 -- Compilation state: list of bound variables.
 St = List String
@@ -17,9 +20,18 @@ Compile : _
 Compile = State St
 
 -- Get the next sensible identifier.
--- TODO: Fix placeholder implementation.
+nextChar : Char → Char × Bool
+nextChar c = if c == 'z' then 'a' , true
+                         else (fromNat $ 1 + (toNat c)) , false
+
+nextId' : List Char → List Char
+nextId' [] = [ 'a' ]
+nextId' (c ∷ cs) with (nextChar c)
+nextId' (c ∷ cs) | c' , false = c' ∷ cs
+nextId' (c ∷ cs) | c' , true = c' ∷ nextId' cs
+
 nextId : String → String
-nextId a = a ++ "a"
+nextId = fromList ∘ reverse ∘ nextId' ∘ reverse ∘ toList
 
 -- List functions we wouldn't need if we only promised to compile closed terms…
 -- But how would we recurse?
