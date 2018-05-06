@@ -1,7 +1,6 @@
 module Erlang.Print where
 open import Erlang.Syntax
 open import Function
-open import Category.Monad
 open import Data.Product
 open import Data.Nat renaming (ℕ to Nat)
 open import Data.Integer renaming (ℤ to Int)

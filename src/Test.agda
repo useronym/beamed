@@ -1,24 +1,22 @@
-open import Data.String
-open import Data.List using (List; []; _∷_)
+open import Data.List using (List; _∷_; []; [_]; reverse)
+open import Data.String using (String; toList; fromList)
+open import Category.Monad.State
 
 
-record Print (A : Set) : Set where
-  field
-    print : A → String
-open Print {{…}} public
+data _∈_ {A : Set} : A → List A → Set where
+  here  : ∀ {a xs} → a ∈ (a ∷ xs)
+  there : ∀ {a b xs} → a ∈ xs → a ∈ (b ∷ xs)
+infix 7 _∈_
 
-data StringyList : Set where
-  wrap : List String → StringyList
+Ctx : Set
+Ctx = List {!!} -- whatever
 
-instance
-  printString : Print String
-  printString = record { print = λ x → x }
+-- Compilation state: list of identifiers assigned to bound variables.
+St : Ctx → Set
+St Γ = ∀ {x} → x ∈ Γ → String
 
-  printList : ∀ {A : Set} → {{_ : Print A}} → Print (List A)
-  printList {A} = record { print = pList }
-    where pList : List A → String
-          pList []       = "[]"
-          pList (x ∷ xs) = "whatevs"
+open RawMonadState (StateMonadState (St {!!})) -- What do I put here?
 
-  printStringyList : Print StringyList
-  printStringyList = record { print = λ {(wrap xs) → print xs }}
+-- Compilation monad.
+Compile : Ctx → _
+Compile Γ = State (St Γ)
